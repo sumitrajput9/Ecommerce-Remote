@@ -1,0 +1,55 @@
+
+services:
+  product_db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: product_order_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: newpassword
+    ports:
+      - "5432:5432" # Host:Container - This is the default PostgreSQL port
+    volumes:
+      - product_data:/var/lib/postgresql/data # Persist data
+    healthcheck: # Basic health check to ensure DB is ready
+      test: ["CMD-SHELL", "pg_isready -U user -d product_order_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s 
+
+  customer_db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: customer_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: newpassword
+    ports:
+      - "5433:5432" # Use a different host port (5433) to avoid conflict with product_db
+    volumes:
+      - customer_data:/var/lib/postgresql/data # Persist data
+    healthcheck: # Basic health check to ensure DB is ready
+      test: ["CMD-SHELL", "pg_isready -U user -d customer_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management # Includes management UI for easier inspection
+    ports:
+      - "5672:5672" # AMQP port for applications to connect
+      - "15672:15672" # Management UI port (access via http://localhost:15672)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest 
+    healthcheck: 
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s # Give it more time to start
+
+volumes:
+  product_data: 
+  customer_data: 
